@@ -38,7 +38,6 @@ type EventDescriptor = [
   eventMetaData?: { eventData: any[] },
 ];
 
-// Единый тип для графа зависимостей и KeyDescriptor — никаких условных типов
 type AnyReadableCell<T = any> = BaseManagement & {
   get: (getComparableKeys?: GetComparableKeys<T>) => T | typeof awaiting;
   hushGet: () => T | typeof awaiting;
@@ -54,7 +53,6 @@ type ArrayCellOptions = {
   watchOrder?: boolean;
 };
 
-// Сделали getListCellKey опциональным, чтобы не передавать заглушки вроде `true`
 type ArrayDecoratorOptions<T> = {
   getListCellId: (item: T, index: number, rawArray: T[]) => ArrayItemId;
   getListCellKey?: KeyDescriptor[];
@@ -491,25 +489,21 @@ export function createStateMachine() {
     }
   }
 
-  // 1. Массив с полем id (опции необязательны)
   function reactiveCell<Item extends { id: ArrayItemId }>(
     value: Item[],
     options?: Partial<ArrayConfigFields<NoInferType<Item>>> & ReactiveOptions
   ): ArrayDecorationManagement<ReactiveManagement<Item[]>, Item>;
 
-  // 2. Массив без поля id (опции ОБЯЗАТЕЛЬНЫ, без кортежа — IDE сразу подсказывает поля в `{}`)
   function reactiveCell<Item>(
     value: Item[],
     options: ArrayConfigFields<NoInferType<Item>> & ReactiveOptions
   ): ArrayDecorationManagement<ReactiveManagement<Item[]>, Item>;
 
-  // 3. Не-массив (запрещаем массив через дженерик T)
   function reactiveCell<T>(
     value: T extends readonly any[] ? never : T,
     options?: ReactiveOptions
   ): ReactiveManagement<T>;
 
-  // Реализация: <T> на месте, все подсказки внутри сохраняются
   function reactiveCell<T>(
     value: T,
     options: ReactiveOptions & Partial<ArrayConfigFields<any>> = {}
@@ -618,7 +612,6 @@ export function createStateMachine() {
     options?: ComputedOptions<D>
   ): ComputedManagement<T>;
 
-  // Реализация: <T, D> на месте, внутри всё типизировано
   function computedCell<T, D extends readonly unknown[] = []>(
     compute: () => T,
     options: ComputedOptions<D> &
@@ -742,7 +735,7 @@ export function createStateMachine() {
       addStack(management);
       current = compute();
       popStack();
-      inited = true; // Чтобы не вызывать compute() второй раз при первом .get()
+      inited = true;
 
       const arrayDecorateManagement = decorateLikeArray(
         management as any,
