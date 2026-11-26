@@ -7,7 +7,7 @@ type BaseManagement = {
   isReactive: () => boolean;
 };
 
-type GetComparableKeys<T> = <Keys extends any[]>(value: T) => Keys;
+type GetComparableKeys<T> = (value: T) => Array<any>;
 
 type ReactiveManagement<T> = BaseManagement & {
   get: (getComparableKeys?: GetComparableKeys<T>) => T;
@@ -48,8 +48,8 @@ type KeyDescriptor<T = any> = [
   (dependency: T) => Array<any>,
 ];
 
-type ArrayCellOptions = {
-  keyDescriptors?: KeyDescriptor[];
+type ArrayCellOptions<D extends readonly unknown[] = any[]> = {
+  keyDescriptors?: { [I in keyof D]: KeyDescriptor<D[I]> };
   watchOrder?: boolean;
 };
 
@@ -177,6 +177,13 @@ const noArrayCheck = () => false as const;
 const isArrayCheck = () => true as const;
 
 const defaultGetListCellId = (item: any) => item.id;
+
+function keyDescriptor<T>(
+  cell: AnyReadableCell<T>,
+  selector: (value: T) => Array<any>
+): KeyDescriptor<T> {
+  return [cell, selector];
+}
 
 export function createStateMachine() {
   let stack: Stack | undefined;
@@ -620,7 +627,10 @@ export function createStateMachine() {
   ) {
     let current: T | ReturnType<typeof pipe<T>>;
     const subs = new Set<Stack['data']>();
-    const keyCache = new WeakMap();
+    const keyCache: WeakMap<
+      KeyDescriptor,
+      ReturnType<KeyDescriptor['1']>
+    > = new WeakMap();
     const management = {} as ComputedManagement<T> &
       Partial<
         Omit<ArrayDecorationManagement<ComputedManagement<T>, any>, 'get'>
@@ -681,20 +691,29 @@ export function createStateMachine() {
       let isChanged = false;
 
       if (changes) {
-        const prevKeys = keyCache.get(changes);
-        const keyDescriptor = options.keyDescriptors?.find(
-          ([o]) => o === changes
-        );
+        const keyDescriptors =
+          options.keyDescriptors?.filter(([o]) => o === changes) ?? [];
 
-        if (keyDescriptor) {
-          const currentKeys = keyDescriptor[1](changes.hushGet() as any);
-          const isEquals = isDeepEquals(currentKeys, prevKeys);
+        if (keyDescriptors.length) {
+          const prevKeys = keyDescriptors?.map((d) => keyCache.get(d)) ?? [];
 
-          if (isEquals) {
-            return;
+          for (let desc in keyDescriptors) {
+            const currentKeys = keyDescriptors[desc][1](
+              changes.hushGet() as any
+            );
+            const isEquals = isDeepEquals(currentKeys, prevKeys[desc]);
+
+            if (!isEquals) {
+              isChanged = true;
+              break;
+            }
           }
-
+        } else {
           isChanged = true;
+        }
+
+        if (!isChanged) {
+          return;
         }
       }
 
@@ -835,7 +854,7 @@ export function createStateMachine() {
     keyCache: WeakMap<object, ReturnType<KeyDescriptor[1]>>
   ) {
     for (let descriptor of keyDescriptors) {
-      keyCache.set(descriptor[0], descriptor[1](descriptor[0].hushGet()));
+      keyCache.set(descriptor, descriptor[1](descriptor[0].hushGet()));
     }
   }
 
@@ -990,11 +1009,11 @@ export function createStateMachine() {
     return { isAwaiting: true as const, callback };
   }
 
-  function isReactiveCell(cell: SomeManagement<unknown>) {
+  function isReactiveCell(cell: BaseManagement) {
     return cell.isReactive();
   }
 
-  function isReactiveArrayCell(cell: SomeManagement<unknown>) {
+  function isReactiveArrayCell(cell: BaseManagement) {
     return cell.isArray?.();
   }
 
@@ -1008,5 +1027,6 @@ export function createStateMachine() {
     pipe,
     isReactiveCell,
     isReactiveArrayCell,
+    keyDescriptor,
   };
 }

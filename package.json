@@ -1,6 +1,6 @@
 {
   "name": "sprut-granular",
-  "version": "0.1.0-beta.1",
+  "version": "0.2.0-beta.1",
   "description": "Инструмент управления состоянием данных. Data state management tool, functional wrappers for values",
   "keywords": [
     "state management",

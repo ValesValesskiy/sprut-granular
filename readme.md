@@ -202,8 +202,8 @@ const user = reactiveCell({
 // 1. Внутри computedCell с условной логикой
 const badge = computedCell(() => {
   const role = user.get((u) => [u.role]);
-  if (role === 'admin') {
-    return `Admin: ${user.get((u) => [u.name])}`;
+  if (role.role === 'admin') {
+    return `Admin: ${user.get((u) => [u.name]).name}`;
   }
   return 'Guest';
 });
@@ -384,15 +384,26 @@ const { reactiveCell, actionCell, asyncStacking, asyncStackedAction } =
 const multiplier = reactiveCell(2);
 
 const runAsync = actionCell(() => {
+  // Сохраняем текущий реактивный контекст (runAsync) до выхода из синхронного стека
   const keepContext = asyncStacking();
 
   setTimeout(() => {
-    // Внутри keepContext чтение multiplier.get() снова привяжется к runAsync
+    // Без keepContext подписка на multiplier после setTimeout не создалась бы.
+    // Внутри keepContext чтение multiplier.get() привязывает runAsync к изменениям multiplier.
     keepContext(() => {
       console.log('Результат:', multiplier.get() * 10);
     });
   }, 100);
 });
+
+// 1. Запускаем действие: через 100 мс выведет "Результат: 20" и подпишется на multiplier
+runAsync();
+
+// 2. Каждые 200 мс обновляем multiplier -> срабатывает подписка ->
+// runAsync перезапускается и через 100 мс выводит новое значение (120, 220, 320...)
+const timer = setInterval(() => {
+  multiplier.set((p) => p + 10);
+}, 200);
 ```
 
 `asyncStackedAction(fn)` дополнительно умеет автоматически вызывать `cancelAction()` у предыдущего незавершённого вызова, если функция возвращает объект вида `{ cancelAction: () => void, result?: T }`.
