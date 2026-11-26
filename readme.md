@@ -9,7 +9,7 @@
 ```
 
 > ⚠️ **Внимание:**
-> Инструмент тестируется и будет дописываться или переписываться.
+> Инструмент тестируется и будет дописываться или переписываться.<br/>
 > До версии `1.0.0` интерфейсы некоторых методов могут отличаться от релиза к релизу.
 > Прошу понять и простить.
 
@@ -170,7 +170,7 @@ const profile = reactiveCell({
 });
 
 const fullName = computedCell(
-  () => `profile.get().firstName {profile.get().lastName}`,
+  () => `${profile.get().firstName} ${profile.get().lastName}`,
   {
     keyDescriptors: [[profile, (p) => [p.firstName, p.lastName]]],
   }
@@ -203,7 +203,7 @@ const user = reactiveCell({
 const badge = computedCell(() => {
   const role = user.get((u) => [u.role]);
   if (role === 'admin') {
-    return `Admin: \${user.get((u) => [u.name])}`;
+    return `Admin: ${user.get((u) => [u.name])}`;
   }
   return 'Guest';
 });

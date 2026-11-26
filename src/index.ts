@@ -149,7 +149,9 @@ type ArrayItemId = string | number | symbol;
 
 interface AwaitingPipe<T> {
   isAwaiting: true;
-  callback: (put: (value: T) => void) => void | (() => void);
+  callback: (
+    put: (value: T | ((prev: T | typeof awaiting) => T)) => void
+  ) => void | (() => void);
 }
 
 function isAwaiting<T>(val: T | AwaitingPipe<T>): val is AwaitingPipe<T> {
@@ -556,7 +558,7 @@ export function createStateMachine() {
     if (Array.isArray(value) || options.getListCellId) {
       const arrayDecorateManagement = decorateLikeArray(
         management as any,
-        () => current as any,
+        () => (isAwaiting(current) ? ([] as any) : (current as any)),
         {
           getListCellId: options.getListCellId ?? defaultGetListCellId,
           getListCellKey: options.getListCellKey,
@@ -744,7 +746,7 @@ export function createStateMachine() {
 
       const arrayDecorateManagement = decorateLikeArray(
         management as any,
-        () => current as any,
+        () => (isAwaiting(current) ? ([] as any) : (current as any)),
         {
           getListCellId: options.getListCellId ?? defaultGetListCellId,
           getListCellKey: options.getListCellKey,
@@ -757,12 +759,18 @@ export function createStateMachine() {
     }
 
     function createPut() {
-      const put = (value: T) => {
+      const put = (value: T | ((prev: T | typeof awaiting) => T)) => {
         if (put === currentPut) {
-          const prev = current;
-          current = value;
+          const prev = isAwaiting(current) ? awaiting : current;
+          const nextValue = value instanceof Function ? value(prev) : value;
 
-          if (current !== prev) {
+          if (nextValue !== prev) {
+            current = nextValue;
+
+            if (preNotifyArray) {
+              preNotifyArray();
+            }
+
             triggerSubscribers(subs, management, current);
           }
         }
