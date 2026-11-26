@@ -1,0 +1,9 @@
+.vscode
+
+node_modules
+dist
+
+repo_ignore
+test.js
+
+testing

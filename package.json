@@ -1,0 +1,54 @@
+{
+  "name": "sprut-granular",
+  "version": "0.1.0-beta.1",
+  "description": "Инструмент управления состоянием данных. Data state management tool, functional wrappers for values",
+  "keywords": [
+    "state management",
+    "state manager",
+    "getter",
+    "setter",
+    "state",
+    "reactive",
+    "fine-grained",
+    "granular",
+    "signals",
+    "cells",
+    "async"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ValesValesskiy/sprut-granular"
+  },
+  "author": "ValesValesskiy",
+  "license": "MIT",
+  "scripts": {
+    "build": "node ./scripts/build.js",
+    "dev": "node ./scripts/build.js --dev",
+    "dev-watch": "node ./scripts/build.js --watch",
+    "prod": "node ./scripts/build.js --prod"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/browser.js"
+      },
+      "node": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/node.js",
+        "require": "./dist/node.cjs"
+      },
+      "default": "./dist/node.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "main": "./dist/node.cjs",
+  "module": "./dist/node.js",
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "esbuild": "^0.28.0",
+    "prettier": "^3.8.2",
+    "typescript": "^6.0.2"
+  }
+}
